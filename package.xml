@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>task_behavior_ros</name>
+  <version>0.0.0</version>
+  <description>The task_behavior_ros package</description>
+  <maintainer email="allison.thackston@tri.global">Allison Thackston</maintainer>
+
+  <license>Apache 2.0</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>task_behavior_engine</exec_depend>
+  <exec_depend>task_behavior_msgs</exec_depend>
+
+</package>
