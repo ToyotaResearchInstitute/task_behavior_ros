@@ -10,5 +10,6 @@
   <buildtool_depend>catkin</buildtool_depend>
   <exec_depend>task_behavior_engine</exec_depend>
   <exec_depend>task_behavior_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
 
 </package>
