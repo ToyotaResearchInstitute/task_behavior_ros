@@ -50,12 +50,12 @@ class TestChargeCompleteMonitor(object):
         self.msg_pub.publish(msg)
         rospy.sleep(0.1)
         result = self.charge_monitor.tick()
-        assert_equal(result.status, NodeStatus.FAIL)
+        assert_equal(result.status, NodeStatus.ACTIVE)
         msg.percentage = 0.99
         self.msg_pub.publish(msg)
         rospy.sleep(0.1)
         result = self.charge_monitor.tick()
-        assert_equal(result.status, NodeStatus.FAIL)
+        assert_equal(result.status, NodeStatus.ACTIVE)
 
         # set max
         self.blackboard.save("max_charge", 0.95, self.charge_monitor._id)

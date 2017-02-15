@@ -116,8 +116,7 @@ class TopicMonitor(Node):
             topic_name, topic_type, self._monitor, queue_size=queue_size)
 
     def _monitor(self, msg):
-        self.msg = msg
-        if self.is_running:
+        if self.is_running or self.latch:
             nodedata = self._blackboard.get_memory(self._id)
             self.result = self.cb(msg, nodedata)
             if not type(self.result) == NodeStatus:
@@ -126,11 +125,9 @@ class TopicMonitor(Node):
                     "instead returned " + str(type(self.result)))
 
     def config(self, nodedata):
-        self.is_running = True
-        if self.latch and self.msg:
-            self._monitor(self.msg)
-        else:
+        if not self.latch:
             self.result = NodeStatus(NodeStatus.ACTIVE)
+        self.is_running = True
 
     def run(self, nodedata):
         rospy.loginfo("topic monitor: " + str(self.result))
