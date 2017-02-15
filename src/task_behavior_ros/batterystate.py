@@ -30,7 +30,8 @@ class ChargeCompleteMonitor(TopicMonitor):
     NodeData:
         @param max_charge [float] Number between (0., 1.) that indicates charging percentage
     returns NodeStatus.SUCCESS if charging complete
-    returns NodeStatus.FAIL if not charging or not complete
+    returns NodeStatus.ACTIVE if charging
+    returns NodeStatus.FAIL if not charging
     """
 
     def __init__(self, name, topic_name, queue_size=1, *args, **kwargs):
@@ -42,10 +43,12 @@ class ChargeCompleteMonitor(TopicMonitor):
         rospy.loginfo('received msg: ' + str(msg))
         if msg.power_supply_status == BatteryState.POWER_SUPPLY_STATUS_FULL:
             return NodeStatus(NodeStatus.SUCCESS, "Power supply state full")
-        if msg.power_supply_status == BatteryState.POWER_SUPPLY_STATUS_CHARGING \
-                and msg.percentage > nodedata.get_data('max_charge', 1.):
-            return NodeStatus(NodeStatus.SUCCESS, "charge above max")
-        return NodeStatus(NodeStatus.FAIL, "charge not complete")
+        if msg.power_supply_status == BatteryState.POWER_SUPPLY_STATUS_CHARGING:
+            if msg.percentage > nodedata.get_data('max_charge', 1.):
+                return NodeStatus(NodeStatus.SUCCESS, "charge above max")
+            else:
+                return NodeStatus(NodeStatus.ACTIVE, "charging")
+        return NodeStatus(NodeStatus.FAIL, "not charging")
 
 
 class ChargeOKMonitor(TopicMonitor):
@@ -58,8 +61,8 @@ class ChargeOKMonitor(TopicMonitor):
 
     NodeData:
        @param min_charge [float] Number between (0., 1.) that indicates minimum charging percentage
-    returns NodeStatus.SUCCESS if charge ok
-    returns NodeStatus.FAIL if charge below limits
+    returns NodeStatus.SUCCESS if charge above min
+    returns NodeStatus.FAIL if charge at or below min
     """
 
     def __init__(self, name, topic_name, queue_size=1, *args, **kwargs):
