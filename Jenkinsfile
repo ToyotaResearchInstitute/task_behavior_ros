@@ -27,21 +27,28 @@ node {
                            sh """
                               pwd
                               wstool init .
-                              """
+                            """
                            dir('task_behavior_ros'){
                               sh """
                                  pwd
-                                 """
+                              """
                               checkout scm
                               sh """
                                  ls -la
-                                 """
+                              """
                            }
                            sh """
                               wstool merge task_behavior_ros/task_behavior_ros.rosinstall
                               wstool up
                               """
                         }
+                    }
+                }
+                stage('get_deps') {
+                    withEnv(["PATH+ROSDEP=${tool 'rosdep'}/bin"]) {
+                        sh """
+                          rosdep install --from-paths src --ignore-src --rosdistro=indigo -y
+                        """
                     }
                 }
                 stage('build') {

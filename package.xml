@@ -12,5 +12,6 @@
   <exec_depend>task_behavior_msgs</exec_depend>
 
   <test_depend>rostest</test_depend>
+  <test_depend>actionlib_tutorials</test_depend>
 
 </package>
