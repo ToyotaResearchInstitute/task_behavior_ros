@@ -59,6 +59,7 @@ node {
                        sh """
                           . catkin_ws/install/setup.sh
                           catkin_make run_tests -C catkin_ws
+                          catkin_test_results
                           """
                        slackSend color:  '#0000FF', message: "stage 'test' of build $buildLink passed"
                     }
