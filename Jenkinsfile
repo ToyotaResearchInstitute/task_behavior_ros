@@ -25,7 +25,7 @@ node {
                               pwd
                               wstool init .
                               """
-                           dir(task_behavior_ros){
+                           dir('task_behavior_ros'){
                               sh """
                                  pwd
                                  """
