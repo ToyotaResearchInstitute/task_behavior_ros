@@ -152,7 +152,7 @@ class TestActionClient(object):
         ac.force(NodeStatus.FAIL)
         result = ac.tick()
         assert_equal(result, NodeStatus.FAIL)
-        rospy.sleep(0.5)
+        rospy.sleep(1.1)
         assert_equal(ac.client.get_state(), GoalStatus.PREEMPTED)
 
     def test_cancel(self):
@@ -171,7 +171,7 @@ class TestActionClient(object):
         ac.cancel()
         result = ac.tick()
         assert_equal(result, NodeStatus.CANCEL)
-        rospy.sleep(1.)
+        rospy.sleep(0.9)
         assert_equal(ac.client.get_state(), GoalStatus.PREEMPTED)
 
 if __name__ == '__main__':
