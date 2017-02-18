@@ -47,7 +47,8 @@ node {
                 stage('get_deps') {
                     withEnv(["PATH+ROSDEP=${tool 'rosdep'}/bin"]) {
                         sh """
-                          rosdep install --from-paths src --ignore-src --rosdistro=indigo -y
+                          rosdep update
+                          rosdep install --from-paths catkin_ws/src --ignore-src --rosdistro=indigo -y
                         """
                     }
                 }
