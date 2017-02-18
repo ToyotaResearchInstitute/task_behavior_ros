@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright 2016 Toyota Research Institute
 
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -12,10 +13,14 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import argparse
+import rospy
+import sys
+
+import nose
 from nose.tools import assert_equal
 from nose.tools import assert_raises
 
-import rospy
 from std_msgs.msg import String
 
 from task_behavior_ros import topic
@@ -371,3 +376,17 @@ class TestTopicPublisher(object):
         msg = rospy.wait_for_message('/topic_cb', String)
         assert_equal(result.status, NodeStatus.CANCEL)
         assert_equal('1', msg.data)
+
+if __name__ == '__main__':
+    # This code will run the test in this file.'
+    module_name = sys.modules[__name__].__file__
+
+    parser = argparse.ArgumentParser(description='Perform unit test.')
+    parser.add_argument(
+        '--gtest_output', nargs='?', default='test.xml')
+
+    args, unknown = parser.parse_known_args()
+
+    noseargs = [sys.argv[0], module_name, '--with-xunit',
+                '--xunit-file='+str(args.gtest_output.lstrip('xml:'))]
+    nose.run(argv=noseargs)

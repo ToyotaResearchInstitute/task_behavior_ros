@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright 2016 Toyota Research Institute
 
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -12,10 +13,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-
+import nose
 from nose.tools import assert_equal
 
+import argparse
 import rospy
+import sys
 
 import actionlib
 from actionlib_msgs.msg import GoalStatus
@@ -170,3 +173,17 @@ class TestActionClient(object):
         assert_equal(result, NodeStatus.CANCEL)
         rospy.sleep(1.)
         assert_equal(ac.client.get_state(), GoalStatus.PREEMPTED)
+
+if __name__ == '__main__':
+    # This code will run the test in this file.'
+    module_name = sys.modules[__name__].__file__
+
+    parser = argparse.ArgumentParser(description='Perform unit test.')
+    parser.add_argument(
+        '--gtest_output', nargs='?', default='test.xml')
+
+    args, unknown = parser.parse_known_args()
+
+    noseargs = [sys.argv[0], module_name, '--with-xunit',
+                '--xunit-file='+str(args.gtest_output.lstrip('xml:'))]
+    nose.run(argv=noseargs)
