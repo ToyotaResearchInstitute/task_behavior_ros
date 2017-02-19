@@ -22,25 +22,18 @@ node {
                     withEnv(["PATH+WSTOOL=${tool 'wstool'}/bin"]) {
                         sh """
                            rm -fr catkin_ws
-                           """
+                        """
                         dir('catkin_ws/src'){
-                           sh """
-                              pwd
+                          sh """
                               wstool init .
-                            """
-                           dir('task_behavior_ros'){
-                              sh """
-                                 pwd
-                              """
+                          """
+                          dir('task_behavior_ros'){
                               checkout scm
-                              sh """
-                                 ls -la
-                              """
-                           }
-                           sh """
+                          }
+                          sh """
                               wstool merge task_behavior_ros/task_behavior_ros.rosinstall
                               wstool up
-                              """
+                          """
                         }
                     }
                 }
@@ -57,19 +50,19 @@ node {
                         sh """
                           . /opt/ros/indigo/setup.sh
                           catkin_make install -C catkin_ws
-                           """
+                        """
 
                         slackSend color: 'good', message: "stage 'build' of build $buildLink passed"
                     }
                 }
                 stage('test') {
                     withEnv(["PATH+CATKIN=${tool 'catkin'}/bin"]) {
-                       sh """
+                        sh """
                           . catkin_ws/install/setup.sh
                           catkin_make run_tests -C catkin_ws
                           catkin_test_results
-                          """
-                       slackSend color:  '#0000FF', message: "stage 'test' of build $buildLink passed"
+                        """
+                        slackSend color:  '#0000FF', message: "stage 'test' of build $buildLink passed"
                     }
                 }
             } catch(Exception e) {
