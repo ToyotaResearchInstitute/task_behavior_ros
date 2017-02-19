@@ -94,6 +94,6 @@ class ActionClient(Node):
 
     def cleanup(self, nodedata):
         rospy.loginfo("[" + self._name + "] cleaning up...")
-        if self.server_connected and self.client.get_state() == GoalStatus.ACTIVE:
+        if self.server_connected and self.client.get_state() <= GoalStatus.ACTIVE:
             rospy.loginfo("[" + self._name + "] canceling goal..")
             self.client.cancel_goal()
