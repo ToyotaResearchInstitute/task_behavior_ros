@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright 2016 Toyota Research Institute
 
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -11,10 +12,13 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import argparse
+import rospy
+import sys
 
+import nose
 from nose.tools import assert_equal
 
-import rospy
 from sensor_msgs.msg import BatteryState
 
 from task_behavior_engine.tree import NodeStatus
@@ -262,3 +266,17 @@ class TestChargeOKMonitor(object):
         rospy.sleep(0.1)  # let callbacks finish
         result = self.charge_monitor.tick()
         assert_equal(result.status, NodeStatus.FAIL)
+
+if __name__ == '__main__':
+    # This code will run the test in this file.'
+    module_name = sys.modules[__name__].__file__
+
+    parser = argparse.ArgumentParser(description='Perform unit test.')
+    parser.add_argument(
+        '--gtest_output', nargs='?', default='test.xml')
+
+    args, unknown = parser.parse_known_args()
+
+    noseargs = [sys.argv[0], module_name, '--with-xunit',
+                '--xunit-file='+str(args.gtest_output.lstrip('xml:'))]
+    nose.run(argv=noseargs)

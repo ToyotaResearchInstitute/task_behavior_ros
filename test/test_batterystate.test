@@ -1,0 +1,3 @@
+<launch>
+  <test test-name="test_batterystate" pkg="task_behavior_ros" type="test_batterystate.py" />
+</launch>
