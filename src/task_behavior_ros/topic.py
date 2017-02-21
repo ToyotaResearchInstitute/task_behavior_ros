@@ -94,6 +94,9 @@ class TopicMonitor(Node):
         @param topic_type [type] The type of the topic
         @param cb [function] The function to call when message received on topic
         @param queue_size [int] The size of the message queue
+        @param latch [bool] Whether to latch the topic callback.  If true, this
+                        will return the result from the last cb and not wait
+                        for a new message to be received
 
         callback:
             @param msg: The message from the subscriber
