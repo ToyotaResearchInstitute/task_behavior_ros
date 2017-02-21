@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright 2016 Toyota Research Institute
 
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -12,10 +13,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-
+import nose
 from nose.tools import assert_equal
 
+import argparse
 import rospy
+import sys
 
 import actionlib
 from actionlib_msgs.msg import GoalStatus
@@ -41,7 +44,7 @@ class FibonacciAction(object):
 
     def execute_cb(self, goal):
         # helper variables
-        r = rospy.Rate(1)
+        r = rospy.Rate(10)
         success = True
 
         # append the seeds for the fibonacci sequence
@@ -67,6 +70,9 @@ class FibonacciAction(object):
             self._as.publish_feedback(self._feedback)
             # this step is not necessary, the sequence is computed at 1 Hz for
             # demonstration purposes
+            rospy.loginfo(i)
+            rospy.loginfo(self._feedback)
+
             r.sleep()
 
         if success:
@@ -75,11 +81,10 @@ class FibonacciAction(object):
             self._as.set_succeeded(self._result)
 
 
-def setup_module():
-    FibonacciAction('test_action')
-
-
 class TestActionClient(object):
+
+    def setUp(self):
+        self.action = FibonacciAction('test_action')
 
     def test_server_connected(self):
         # test nominal condition
@@ -106,12 +111,12 @@ class TestActionClient(object):
                                  goal=msg)
 
         result = ac.tick()
-        assert_equal(result, NodeStatus.ACTIVE)
+        assert_equal(result.status, NodeStatus.ACTIVE)
 
-        rospy.sleep(3.)
+        rospy.sleep(0.5)
 
         result = ac.tick()
-        assert_equal(result, NodeStatus.SUCCESS)
+        assert_equal(result.status, NodeStatus.SUCCESS)
 
     def test_goal_cb(self):
 
@@ -126,16 +131,16 @@ class TestActionClient(object):
                                  goal_cb=goal_cb)
 
         result = ac.tick()
-        assert_equal(result, NodeStatus.ACTIVE)
+        assert_equal(result.status, NodeStatus.ACTIVE)
 
-        rospy.sleep(3.)
+        rospy.sleep(0.5)
 
         result = ac.tick()
-        assert_equal(result, NodeStatus.SUCCESS)
+        assert_equal(result.status, NodeStatus.SUCCESS)
 
     def test_force(self):
         msg = actionlib_tutorials.msg.FibonacciGoal()
-        msg.order = 3
+        msg.order = 100
         # test nominal condition
         ac = action.ActionClient(name="actionlib_tutorial_client",
                                  action_name='/test_action',
@@ -143,18 +148,19 @@ class TestActionClient(object):
                                  goal=msg)
 
         result = ac.tick()
-        assert_equal(result, NodeStatus.ACTIVE)
-        rospy.sleep(1.)
+        assert_equal(result.status, NodeStatus.ACTIVE)
 
         ac.force(NodeStatus.FAIL)
         result = ac.tick()
-        assert_equal(result, NodeStatus.FAIL)
+        assert_equal(result.status, NodeStatus.FAIL)
+
         rospy.sleep(0.5)
+
         assert_equal(ac.client.get_state(), GoalStatus.PREEMPTED)
 
     def test_cancel(self):
         msg = actionlib_tutorials.msg.FibonacciGoal()
-        msg.order = 3
+        msg.order = 100
         # test nominal condition
         ac = action.ActionClient(name="actionlib_tutorial_client",
                                  action_name='/test_action',
@@ -162,11 +168,26 @@ class TestActionClient(object):
                                  goal=msg)
 
         result = ac.tick()
-        assert_equal(result, NodeStatus.ACTIVE)
-        rospy.sleep(1.)
+        assert_equal(result.status, NodeStatus.ACTIVE)
 
         ac.cancel()
         result = ac.tick()
-        assert_equal(result, NodeStatus.CANCEL)
-        rospy.sleep(1.)
+        assert_equal(result.status, NodeStatus.CANCEL)
+
+        rospy.sleep(0.5)
+
         assert_equal(ac.client.get_state(), GoalStatus.PREEMPTED)
+
+if __name__ == '__main__':
+    # This code will run the test in this file.'
+    module_name = sys.modules[__name__].__file__
+
+    parser = argparse.ArgumentParser(description='Perform unit test.')
+    parser.add_argument(
+        '--gtest_output', nargs='?', default='test.xml')
+
+    args, unknown = parser.parse_known_args()
+
+    noseargs = [sys.argv[0], module_name, '--with-xunit',
+                '--xunit-file='+str(args.gtest_output.lstrip('xml:'))]
+    nose.run(argv=noseargs)
