@@ -327,14 +327,14 @@ class TestTopicMonitor(object):
         msg = String()
         msg.data = "test_string"
         self.msg_pub.publish(msg)
-        rospy.sleep(0.1)
+        rospy.sleep(0.2)
         result = self.topic_monitor.tick()
         assert_equal(result.status, NodeStatus.ACTIVE)
         assert_equal(1, self.blackboard.get('count', self.topic_monitor._id))
 
         self.topic_monitor.cancel()
         self.msg_pub.publish(msg)
-        rospy.sleep(0.1)
+        rospy.sleep(0.2)
         result = self.topic_monitor.tick()
         assert_equal(result.status, NodeStatus.CANCEL)
         assert_equal(2, self.blackboard.get('count', self.topic_monitor._id))
