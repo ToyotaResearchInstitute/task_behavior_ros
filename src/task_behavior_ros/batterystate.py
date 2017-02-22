@@ -24,20 +24,20 @@ class ChargeCompleteMonitor(TopicMonitor):
     """
     Checks if msg indicates charging is complete.
     @param name [str] The name of this node
-    @param name [topic_name] The name of the topic
-    @param queue_size [int] The size of the message queue
+    @param topic_name [str] The name of the topic
 
     NodeData:
         @param max_charge [float] Number between (0., 1.) that indicates charging percentage
+
     returns NodeStatus.SUCCESS if charging complete
     returns NodeStatus.ACTIVE if charging
     returns NodeStatus.FAIL if not charging
     """
 
-    def __init__(self, name, topic_name, queue_size=1, *args, **kwargs):
+    def __init__(self, name, topic_name, *args, **kwargs):
         super(ChargeCompleteMonitor, self).__init__(
             name=name, topic_name=topic_name, topic_type=BatteryState,
-            cb=self.charge_complete_cb, queue_size=1, *args, **kwargs)
+            cb=self.charge_complete_cb, *args, **kwargs)
 
     def charge_complete_cb(self, msg, nodedata):
         rospy.loginfo('received msg: ' + str(msg))
@@ -56,19 +56,19 @@ class ChargeOKMonitor(TopicMonitor):
     """
     Checks if msg indicates charge is ok.
     @param name [str] The name of this node
-    @param name [topic_name] The name of the topic
-    @param queue_size [int] The size of the message queue
+    @param topic_name [str] The name of the topic
 
     NodeData:
        @param min_charge [float] Number between (0., 1.) that indicates minimum charging percentage
+
     returns NodeStatus.SUCCESS if charge above min
     returns NodeStatus.FAIL if charge at or below min
     """
 
-    def __init__(self, name, topic_name, queue_size=1, *args, **kwargs):
+    def __init__(self, name, topic_name, *args, **kwargs):
         super(ChargeOKMonitor, self).__init__(
             name=name, topic_name=topic_name, topic_type=BatteryState,
-            cb=self.charge_ok_cb, queue_size=1, *args, **kwargs)
+            cb=self.charge_ok_cb, *args, **kwargs)
 
     def charge_ok_cb(self, msg, nodedata):
         if msg.percentage > nodedata.get_data('min_charge', 1.):
