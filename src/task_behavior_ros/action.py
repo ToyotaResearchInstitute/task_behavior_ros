@@ -63,7 +63,7 @@ class ActionClient(Node):
             if self.goal:
                 self.client.send_goal(self.goal)
                 rospy.loginfo("sent goal")
-            if self.goal_cb:
+            elif self.goal_cb:
                 self.client.send_goal(self.goal_cb(nodedata))
                 rospy.loginfo("sent goal cb")
         else:

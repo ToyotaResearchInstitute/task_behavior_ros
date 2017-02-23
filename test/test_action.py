@@ -15,6 +15,7 @@
 
 import nose
 from nose.tools import assert_equal
+from nose.tools import assert_true
 
 import argparse
 import rospy
@@ -81,22 +82,23 @@ class FibonacciAction(object):
             self._as.set_succeeded(self._result)
 
 
-class TestActionClient(object):
+def setup_module():
+    FibonacciAction('test_action')
 
-    def setUp(self):
-        self.action = FibonacciAction('test_action')
+
+class TestActionClient(object):
 
     def test_server_connected(self):
         # test nominal condition
         ac = action.ActionClient(name="actionlib_tutorial_client",
-                                 action_name='/test_action',
+                                 action_name='test_action',
                                  action_type=actionlib_tutorials.msg.FibonacciAction)
         ac.config(NodeData())
         assert_equal(ac.server_connected, True)
 
         # test server not available
         ac = action.ActionClient(name="test_no_server",
-                                 action_name="/no_server",
+                                 action_name="no_server",
                                  action_type=actionlib_tutorials.msg.FibonacciAction)
         ac.config(NodeData())
         assert_equal(ac.server_connected, False)
@@ -106,17 +108,20 @@ class TestActionClient(object):
         msg.order = 3
         # test nominal condition
         ac = action.ActionClient(name="actionlib_tutorial_client",
-                                 action_name='/test_action',
+                                 action_name='test_action',
                                  action_type=actionlib_tutorials.msg.FibonacciAction,
                                  goal=msg)
+
+        nodedata = ac._blackboard.get_memory(ac._id)
 
         result = ac.tick()
         assert_equal(result.status, NodeStatus.ACTIVE)
 
-        rospy.sleep(0.5)
+        ac.client.wait_for_result()
 
         result = ac.tick()
         assert_equal(result.status, NodeStatus.SUCCESS)
+        assert_equal((0, 1, 1, 2), nodedata.result.sequence)
 
     def test_goal_cb(self):
 
@@ -126,24 +131,27 @@ class TestActionClient(object):
             return msg
 
         ac = action.ActionClient(name="actionlib_tutorial_client",
-                                 action_name="/test_action",
+                                 action_name="test_action",
                                  action_type=actionlib_tutorials.msg.FibonacciAction,
                                  goal_cb=goal_cb)
+
+        nodedata = ac._blackboard.get_memory(ac._id)
 
         result = ac.tick()
         assert_equal(result.status, NodeStatus.ACTIVE)
 
-        rospy.sleep(0.5)
+        ac.client.wait_for_result()
 
         result = ac.tick()
         assert_equal(result.status, NodeStatus.SUCCESS)
+        assert_equal((0, 1, 1, 2), nodedata.result.sequence)
 
     def test_force(self):
         msg = actionlib_tutorials.msg.FibonacciGoal()
         msg.order = 100
         # test nominal condition
         ac = action.ActionClient(name="actionlib_tutorial_client",
-                                 action_name='/test_action',
+                                 action_name='test_action',
                                  action_type=actionlib_tutorials.msg.FibonacciAction,
                                  goal=msg)
 
@@ -154,8 +162,7 @@ class TestActionClient(object):
         result = ac.tick()
         assert_equal(result.status, NodeStatus.FAIL)
 
-        rospy.sleep(0.5)
-
+        ac.client.wait_for_result()
         assert_equal(ac.client.get_state(), GoalStatus.PREEMPTED)
 
     def test_cancel(self):
@@ -163,22 +170,21 @@ class TestActionClient(object):
         msg.order = 100
         # test nominal condition
         ac = action.ActionClient(name="actionlib_tutorial_client",
-                                 action_name='/test_action',
+                                 action_name='test_action',
                                  action_type=actionlib_tutorials.msg.FibonacciAction,
                                  goal=msg)
 
         result = ac.tick()
         assert_equal(result.status, NodeStatus.ACTIVE)
 
-        rospy.sleep(0.5)
-
         ac.cancel()
         result = ac.tick()
         assert_equal(result.status, NodeStatus.CANCEL)
 
-        rospy.sleep(0.5)
-
-        assert_equal(ac.client.get_state(), GoalStatus.PREEMPTED)
+        ac.client.wait_for_result()
+        client_state = ac.client.get_state()
+        assert_true(
+            client_state == GoalStatus.PREEMPTED or client_state == GoalStatus.RECALLED)
 
 if __name__ == '__main__':
     # This code will run the test in this file.'
