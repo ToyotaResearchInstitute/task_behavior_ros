@@ -94,6 +94,9 @@ class TopicMonitor(Node):
         @param topic_type [type] The type of the topic
         @param cb [function] The function to call when message received on topic
         @param queue_size [int] The size of the message queue
+        @param latch [bool] Whether to latch the topic callback.  If true, this
+                        will return the result from the last cb and not wait
+                        for a new message to be received
 
         callback:
             @param msg: The message from the subscriber
@@ -101,7 +104,7 @@ class TopicMonitor(Node):
             @returns NodeStatus
     """
 
-    def __init__(self, name, topic_name, topic_type, cb, queue_size=1, *args, **kwargs):
+    def __init__(self, name, topic_name, topic_type, cb, queue_size=1, latch=False, *args, **kwargs):
         super(TopicMonitor, self).__init__(name=name,
                                            run_cb=self.run,
                                            configure_cb=self.config,
@@ -111,19 +114,22 @@ class TopicMonitor(Node):
         self.cb = cb
         self.result = NodeStatus(NodeStatus.ACTIVE)
         self.is_running = False
+        self.latch = latch
         self.topic_sub = rospy.Subscriber(
             topic_name, topic_type, self._monitor, queue_size=queue_size)
 
     def _monitor(self, msg):
-        if self.is_running:
+        if self.is_running or self.latch:
             nodedata = self._blackboard.get_memory(self._id)
             self.result = self.cb(msg, nodedata)
             if not type(self.result) == NodeStatus:
                 raise TypeError(
-                    "TopicMonitor callback must return a NodeStatus")
+                    "TopicMonitor callback must return a NodeStatus, "
+                    "instead returned " + str(type(self.result)))
 
     def config(self, nodedata):
-        self.result = NodeStatus(NodeStatus.ACTIVE)
+        if not self.latch:
+            self.result = NodeStatus(NodeStatus.ACTIVE)
         self.is_running = True
 
     def run(self, nodedata):

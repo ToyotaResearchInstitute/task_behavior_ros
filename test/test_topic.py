@@ -58,7 +58,7 @@ class TestTopicTrigger(object):
 
         self.msg_pub.publish(msg)
         # give time for pub/sub to connect
-        rospy.sleep(0.5)
+        rospy.sleep(0.2)
 
         result = self.topic_trig.tick()
         assert_equal(result.status, NodeStatus.ACTIVE)
@@ -71,7 +71,7 @@ class TestTopicTrigger(object):
         msg.data = "success"
         self.msg_pub.publish(msg)
         # give time for pub/sub to connect
-        rospy.sleep(0.5)
+        rospy.sleep(0.2)
         result = self.topic_trig.tick()
         assert_equal(result.status, NodeStatus.SUCCESS)
         assert_equal(self.continue_node.get_status().status, NodeStatus.CANCEL)
@@ -82,7 +82,7 @@ class TestTopicTrigger(object):
         # should just run that node
         msg.data = "fail"
         self.msg_pub.publish(msg)
-        rospy.sleep(0.5)
+        rospy.sleep(0.2)
         result = self.topic_trig.tick()
         assert_equal(result.status, NodeStatus.FAIL)
         assert_equal(self.continue_node.get_status().status, NodeStatus.CANCEL)
@@ -219,6 +219,7 @@ class TestTopicMonitor(object):
         # test to ensure named child is triggered
         def callback(msg, nodedata):
             nodedata.count = nodedata.count + 1
+            nodedata.msg = msg
             if nodedata.count > 1:
                 return NodeStatus(NodeStatus.SUCCESS)
             return NodeStatus(NodeStatus.ACTIVE)
@@ -231,7 +232,6 @@ class TestTopicMonitor(object):
                                                 blackboard=self.blackboard)
 
         self.blackboard.save("count", 0, self.topic_monitor._id)
-        self.blackboard.save("called", False, self.topic_monitor._id)
         self.msg_pub = rospy.Publisher("/topic_monitor", String,
                                        queue_size=1, latch=True)
 
@@ -242,16 +242,69 @@ class TestTopicMonitor(object):
         msg = String()
         msg.data = "test_string"
         self.msg_pub.publish(msg)
-        rospy.sleep(0.5)
+        rospy.sleep(0.2)
         result = self.topic_monitor.tick()
         assert_equal(result.status, NodeStatus.ACTIVE)
         assert_equal(1, self.blackboard.get('count', self.topic_monitor._id))
 
         self.msg_pub.publish(msg)
-        rospy.sleep(0.5)
+        rospy.sleep(0.2)
         result = self.topic_monitor.tick()
         assert_equal(result.status, NodeStatus.SUCCESS)
         assert_equal(2, self.blackboard.get('count', self.topic_monitor._id))
+
+    def test_latch_cb(self):
+        self.topic_monitor.latch = True
+        # assert count starts at zero
+        assert_equal(0, self.blackboard.get('count', self.topic_monitor._id))
+
+        # assert cb not processed at tick
+        result = self.topic_monitor.tick()
+        assert_equal(result.status, NodeStatus.ACTIVE)
+        assert_equal(0, self.blackboard.get('count', self.topic_monitor._id))
+
+        # send message, cb should be processed
+        msg = String()
+        msg.data = "test_string"
+        self.msg_pub.publish(msg)
+        rospy.sleep(0.2)
+        result = self.topic_monitor.tick()
+        assert_equal(1, self.blackboard.get('count', self.topic_monitor._id))
+        assert_equal(result.status, NodeStatus.ACTIVE)
+
+        # send another message, cb should be processed
+        # status should be success
+        self.msg_pub.publish(msg)
+        rospy.sleep(0.2)
+        result = self.topic_monitor.tick()
+        assert_equal(result.status, NodeStatus.SUCCESS)
+        assert_equal(2, self.blackboard.get('count', self.topic_monitor._id))
+
+        # send another message, cb should be processed
+        # status should remain success
+        self.msg_pub.publish(msg)
+        rospy.sleep(0.2)
+        result = self.topic_monitor.tick()
+        assert_equal(result.status, NodeStatus.SUCCESS)
+        assert_equal(3, self.blackboard.get('count', self.topic_monitor._id))
+
+        # check value of latched callback
+        msg = String("hello_1")
+        self.msg_pub.publish(msg)
+        rospy.sleep(0.2)
+        msg = String("hello_2")
+        self.msg_pub.publish(msg)
+        rospy.sleep(0.2)
+        result = self.topic_monitor.tick()
+        assert_equal(result.status, NodeStatus.SUCCESS)
+        assert_equal(5, self.blackboard.get('count', self.topic_monitor._id))
+        assert_equal(
+            msg, self.blackboard.get('msg', self.topic_monitor._id))
+        result = self.topic_monitor.tick()
+        assert_equal(result.status, NodeStatus.SUCCESS)
+        assert_equal(5, self.blackboard.get('count', self.topic_monitor._id))
+        assert_equal(
+            msg, self.blackboard.get('msg', self.topic_monitor._id))
 
     def test_force(self):
         result = self.topic_monitor.tick()
@@ -267,14 +320,14 @@ class TestTopicMonitor(object):
         msg = String()
         msg.data = "test_string"
         self.msg_pub.publish(msg)
-        rospy.sleep(0.5)
+        rospy.sleep(0.2)
         result = self.topic_monitor.tick()
         assert_equal(result.status, NodeStatus.ACTIVE)
         assert_equal(1, self.blackboard.get('count', self.topic_monitor._id))
 
         self.topic_monitor.force(NodeStatus.FAIL)
         self.msg_pub.publish(msg)
-        rospy.sleep(0.5)
+        rospy.sleep(0.2)
         result = self.topic_monitor.tick()
         assert_equal(result.status, NodeStatus.FAIL)
         assert_equal(2, self.blackboard.get('count', self.topic_monitor._id))
@@ -293,14 +346,14 @@ class TestTopicMonitor(object):
         msg = String()
         msg.data = "test_string"
         self.msg_pub.publish(msg)
-        rospy.sleep(0.5)
+        rospy.sleep(0.2)
         result = self.topic_monitor.tick()
         assert_equal(result.status, NodeStatus.ACTIVE)
         assert_equal(1, self.blackboard.get('count', self.topic_monitor._id))
 
         self.topic_monitor.cancel()
         self.msg_pub.publish(msg)
-        rospy.sleep(0.5)
+        rospy.sleep(0.2)
         result = self.topic_monitor.tick()
         assert_equal(result.status, NodeStatus.CANCEL)
         assert_equal(2, self.blackboard.get('count', self.topic_monitor._id))

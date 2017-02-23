@@ -24,6 +24,7 @@ install(DIRECTORY example
 if (CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
   add_rostest(test/test_action.test)
+  add_rostest(test/test_batterystate.test)
   add_rostest(test/test_introspection.test)
   add_rostest(test/test_time.test)
   add_rostest(test/test_topic.test)
