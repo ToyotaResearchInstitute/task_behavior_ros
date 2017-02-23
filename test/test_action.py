@@ -170,6 +170,8 @@ class TestActionClient(object):
         result = ac.tick()
         assert_equal(result.status, NodeStatus.ACTIVE)
 
+        rospy.sleep(0.5)
+
         ac.cancel()
         result = ac.tick()
         assert_equal(result.status, NodeStatus.CANCEL)
