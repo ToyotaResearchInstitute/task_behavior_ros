@@ -1,7 +1,7 @@
 // define a tag according to the Docker tag rules https://docs.docker.com/engine/reference/commandline/tag/
 // the hash sign (#) is problematic when using it in bash, instead of working around this problem, just replace all
 // punctuation with dash (-)
-def projectShortName = "${env.JOB_NAME}" - "/${env.BRANCH_NAME}"
+def projectShortName = "task_behavior_ros"
 def githubOrg = "ToyotaResearchInstitute"
 def dockerTag = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}".toLowerCase().replaceAll("\\p{Punct}", "-").replaceAll("\\p{Space}", "-")
 
@@ -17,7 +17,7 @@ node {
                         pipelineTriggers([pollSCM('H/2 * * * *')])
                 ]
 
-                slackSend color: 'warning', message: "build $buildLink started"
+                slackSend message: "build $buildLink started"
                 stage('checkout') {
                     withEnv(["PATH+WSTOOL=${tool 'wstool'}/bin"]) {
                         sh """
@@ -27,13 +27,11 @@ node {
                           sh """
                               wstool init .
                           """
-                          dir('task_behavior_ros'){
+                          dir("$projectShortName"){
                               checkout scm
-                          }
-                          sh """
-                              wstool merge task_behavior_ros/task_behavior_ros.rosinstall
+                              wstool merge "$projectShortName.rosinstall"
                               wstool up
-                          """
+                          }
                         }
                     }
                 }
@@ -51,8 +49,6 @@ node {
                           . /opt/ros/indigo/setup.sh
                           catkin_make install -C catkin_ws
                         """
-
-                        slackSend color: 'good', message: "stage 'build' of build $buildLink passed"
                     }
                 }
                 stage('test') {
@@ -62,9 +58,9 @@ node {
                           catkin_make run_tests -C catkin_ws
                           catkin_test_results
                         """
-                        slackSend color:  '#0000FF', message: "stage 'test' of build $buildLink passed"
                     }
                 }
+                slackSend color: 'good', message: "$buildLink completed successfully"
             } catch(Exception e) {
                 slackSend color: 'danger', message: "build $buildLink failed"
                 error "error building, ${e.getMessage()}"
