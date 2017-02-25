@@ -30,7 +30,7 @@ node {
                           dir("$projectShortName"){
                               checkout scm
                               sh """
-                              wstool merge "$projectShortName.rosinstall"
+                              wstool merge "$projectShortName".rosinstall
                               wstool up
                               """
                           }
