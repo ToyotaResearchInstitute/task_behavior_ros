@@ -21,16 +21,18 @@ node {
                 stage('checkout') {
                     withEnv(["PATH+WSTOOL=${tool 'wstool'}/bin"]) {
                         sh """
-                           rm -fr catkin_ws
+                        rm -fr catkin_ws
                         """
                         dir('catkin_ws/src'){
                           sh """
-                              wstool init .
+                          wstool init .
                           """
                           dir("$projectShortName"){
                               checkout scm
+                              sh """
                               wstool merge "$projectShortName.rosinstall"
                               wstool up
+                              """
                           }
                         }
                     }
@@ -38,25 +40,25 @@ node {
                 stage('get_deps') {
                     withEnv(["PATH+ROSDEP=${tool 'rosdep'}/bin"]) {
                         sh """
-                          rosdep update
-                          rosdep install --from-paths catkin_ws/src --ignore-src --rosdistro=indigo -y
+                        rosdep update
+                        rosdep install --from-paths catkin_ws/src --ignore-src --rosdistro=indigo -y
                         """
                     }
                 }
                 stage('build') {
                     withEnv(["PATH+CATKIN=${tool 'catkin'}/bin"]) {
                         sh """
-                          . /opt/ros/indigo/setup.sh
-                          catkin_make install -C catkin_ws
+                        . /opt/ros/indigo/setup.sh
+                        catkin_make install -C catkin_ws
                         """
                     }
                 }
                 stage('test') {
                     withEnv(["PATH+CATKIN=${tool 'catkin'}/bin"]) {
                         sh """
-                          . catkin_ws/install/setup.sh
-                          catkin_make run_tests -C catkin_ws
-                          catkin_test_results
+                        . catkin_ws/install/setup.sh
+                        catkin_make run_tests -C catkin_ws
+                        catkin_test_results
                         """
                     }
                 }
