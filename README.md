@@ -22,7 +22,7 @@ cd catkin_ws
 wstool init src
 
 # Merge the task_behavior_ros.rosinstall file and download code dependancies.
-wstool merge -t src https://raw.githubusercontent.com/toyotaresearchinstitute/task_behavior_engine/master/task_behavior_ros.rosinstall
+wstool merge -t src https://github.com/ToyotaResearchInstitute/task_behavior_ros/raw/master/task_behavior_ros.rosinstall
 wstool update -t src
 
 # Install deb dependencies.
@@ -31,8 +31,8 @@ rosdep update
 rosdep install --from-paths src --ignore-src --rosdistro=${ROS_DISTRO} -y
 
 # Build and install.
-catkin_make --install
-source install_isolated/setup.bash
+catkin_make install
+source install/setup.bash
 ```
 
 ## Running the demos ##
