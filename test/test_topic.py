@@ -34,7 +34,7 @@ class TestTopicTrigger(object):
     def setUp(self):
         # test to ensure named child is triggered
         self.topic_trig = topic.TopicTrigger(name="trigger",
-                                             topic_name="/topic_trigger")
+                                             topic_name="topic_trigger")
         self.continue_node = node.Continue(name="continue")
         self.success_node = node.Success(name="success")
         self.fail_node = node.Fail(name="fail")
@@ -43,8 +43,7 @@ class TestTopicTrigger(object):
         self.topic_trig.add_child(self.success_node)
         self.topic_trig.add_child(self.fail_node)
 
-        self.msg_pub = rospy.Publisher("/topic_trigger", String,
-                                       queue_size=1, latch=True)
+        assert_equal(rospy.Subscriber, type(self.topic_trig.trigger_sub))
 
     def test_trigger_cb(self):
         result = self.topic_trig.tick()
@@ -54,12 +53,9 @@ class TestTopicTrigger(object):
         assert_equal(self.fail_node.get_status().status, NodeStatus.PENDING)
 
         msg = String()
+
         msg.data = "continue"
-
-        self.msg_pub.publish(msg)
-        # give time for pub/sub to connect
-        rospy.sleep(0.2)
-
+        self.topic_trig.trigger_sub.callback(msg)
         result = self.topic_trig.tick()
         assert_equal(result.status, NodeStatus.ACTIVE)
         assert_equal(self.continue_node.get_status(), NodeStatus.ACTIVE)
@@ -69,9 +65,7 @@ class TestTopicTrigger(object):
         # triggering another node while one is active
         # should cancel active node and start new one
         msg.data = "success"
-        self.msg_pub.publish(msg)
-        # give time for pub/sub to connect
-        rospy.sleep(0.2)
+        self.topic_trig.trigger_sub.callback(msg)
         result = self.topic_trig.tick()
         assert_equal(result.status, NodeStatus.SUCCESS)
         assert_equal(self.continue_node.get_status().status, NodeStatus.CANCEL)
@@ -81,8 +75,7 @@ class TestTopicTrigger(object):
         # triggering another node after all have finished
         # should just run that node
         msg.data = "fail"
-        self.msg_pub.publish(msg)
-        rospy.sleep(0.2)
+        self.topic_trig.trigger_sub.callback(msg)
         result = self.topic_trig.tick()
         assert_equal(result.status, NodeStatus.FAIL)
         assert_equal(self.continue_node.get_status().status, NodeStatus.CANCEL)
@@ -226,14 +219,14 @@ class TestTopicMonitor(object):
 
         self.blackboard = Blackboard()
         self.topic_monitor = topic.TopicMonitor(name="monitor",
-                                                topic_name="/topic_monitor",
+                                                topic_name="topic_monitor",
                                                 topic_type=String,
                                                 cb=callback,
                                                 blackboard=self.blackboard)
 
         self.blackboard.save("count", 0, self.topic_monitor._id)
-        self.msg_pub = rospy.Publisher("/topic_monitor", String,
-                                       queue_size=1, latch=True)
+
+        assert_equal(rospy.Subscriber, type(self.topic_monitor.topic_sub))
 
     def test_cb(self):
         result = self.topic_monitor.tick()
@@ -241,14 +234,12 @@ class TestTopicMonitor(object):
 
         msg = String()
         msg.data = "test_string"
-        self.msg_pub.publish(msg)
-        rospy.sleep(0.2)
+        self.topic_monitor.topic_sub.callback(msg)
         result = self.topic_monitor.tick()
         assert_equal(result.status, NodeStatus.ACTIVE)
         assert_equal(1, self.blackboard.get('count', self.topic_monitor._id))
 
-        self.msg_pub.publish(msg)
-        rospy.sleep(0.2)
+        self.topic_monitor.topic_sub.callback(msg)
         result = self.topic_monitor.tick()
         assert_equal(result.status, NodeStatus.SUCCESS)
         assert_equal(2, self.blackboard.get('count', self.topic_monitor._id))
@@ -266,35 +257,30 @@ class TestTopicMonitor(object):
         # send message, cb should be processed
         msg = String()
         msg.data = "test_string"
-        self.msg_pub.publish(msg)
-        rospy.sleep(0.2)
+        self.topic_monitor.topic_sub.callback(msg)
         result = self.topic_monitor.tick()
         assert_equal(1, self.blackboard.get('count', self.topic_monitor._id))
         assert_equal(result.status, NodeStatus.ACTIVE)
 
         # send another message, cb should be processed
         # status should be success
-        self.msg_pub.publish(msg)
-        rospy.sleep(0.2)
+        self.topic_monitor.topic_sub.callback(msg)
         result = self.topic_monitor.tick()
         assert_equal(result.status, NodeStatus.SUCCESS)
         assert_equal(2, self.blackboard.get('count', self.topic_monitor._id))
 
         # send another message, cb should be processed
         # status should remain success
-        self.msg_pub.publish(msg)
-        rospy.sleep(0.2)
+        self.topic_monitor.topic_sub.callback(msg)
         result = self.topic_monitor.tick()
         assert_equal(result.status, NodeStatus.SUCCESS)
         assert_equal(3, self.blackboard.get('count', self.topic_monitor._id))
 
         # check value of latched callback
         msg = String("hello_1")
-        self.msg_pub.publish(msg)
-        rospy.sleep(0.2)
+        self.topic_monitor.topic_sub.callback(msg)
         msg = String("hello_2")
-        self.msg_pub.publish(msg)
-        rospy.sleep(0.2)
+        self.topic_monitor.topic_sub.callback(msg)
         result = self.topic_monitor.tick()
         assert_equal(result.status, NodeStatus.SUCCESS)
         assert_equal(5, self.blackboard.get('count', self.topic_monitor._id))
@@ -319,15 +305,13 @@ class TestTopicMonitor(object):
 
         msg = String()
         msg.data = "test_string"
-        self.msg_pub.publish(msg)
-        rospy.sleep(0.2)
+        self.topic_monitor.topic_sub.callback(msg)
         result = self.topic_monitor.tick()
         assert_equal(result.status, NodeStatus.ACTIVE)
         assert_equal(1, self.blackboard.get('count', self.topic_monitor._id))
 
         self.topic_monitor.force(NodeStatus.FAIL)
-        self.msg_pub.publish(msg)
-        rospy.sleep(0.2)
+        self.topic_monitor.topic_sub.callback(msg)
         result = self.topic_monitor.tick()
         assert_equal(result.status, NodeStatus.FAIL)
         assert_equal(2, self.blackboard.get('count', self.topic_monitor._id))
@@ -345,15 +329,13 @@ class TestTopicMonitor(object):
 
         msg = String()
         msg.data = "test_string"
-        self.msg_pub.publish(msg)
-        rospy.sleep(0.2)
+        self.topic_monitor.topic_sub.callback(msg)
         result = self.topic_monitor.tick()
         assert_equal(result.status, NodeStatus.ACTIVE)
         assert_equal(1, self.blackboard.get('count', self.topic_monitor._id))
 
         self.topic_monitor.cancel()
-        self.msg_pub.publish(msg)
-        rospy.sleep(0.2)
+        self.topic_monitor.topic_sub.callback(msg)
         result = self.topic_monitor.tick()
         assert_equal(result.status, NodeStatus.CANCEL)
         assert_equal(2, self.blackboard.get('count', self.topic_monitor._id))
@@ -373,12 +355,12 @@ class TestTopicPublisher(object):
         msg.data = "test_msg"
         self.blackboard = Blackboard()
         self.topic_msg = topic.TopicPublisher(name="publisher",
-                                              topic_name="/topic_publisher",
+                                              topic_name="topic",
                                               topic_type=String,
                                               msg=msg,
                                               latch=True)
         self.topic_msg_cb = topic.TopicPublisher(name="cb_publisher",
-                                                 topic_name="/topic_cb",
+                                                 topic_name="topic_cb",
                                                  topic_type=String,
                                                  msg_cb=callback,
                                                  latch=True,
@@ -388,12 +370,12 @@ class TestTopicPublisher(object):
 
     def test_msg(self):
         result = self.topic_msg.tick()
-        msg = rospy.wait_for_message('/topic_publisher', String)
+        msg = rospy.wait_for_message('topic', String)
         assert_equal(result.status, NodeStatus.SUCCESS)
         assert_equal('test_msg', msg.data)
 
         self.topic_msg = topic.TopicPublisher(name="publisher",
-                                              topic_name="/topic_publisher",
+                                              topic_name="topic",
                                               topic_type=String,
                                               msg="msg",
                                               latch=True)
@@ -402,31 +384,31 @@ class TestTopicPublisher(object):
 
     def test_msg_cb(self):
         result = self.topic_msg_cb.tick()
-        msg = rospy.wait_for_message('/topic_cb', String)
+        msg = rospy.wait_for_message('topic_cb', String)
         assert_equal(result.status, NodeStatus.SUCCESS)
         assert_equal('1', msg.data)
 
     def test_force(self):
         result = self.topic_msg_cb.tick()
-        msg = rospy.wait_for_message('/topic_cb', String)
+        msg = rospy.wait_for_message('topic_cb', String)
         assert_equal(result.status, NodeStatus.SUCCESS)
         assert_equal('1', msg.data)
 
         self.topic_msg_cb.force(NodeStatus.FAIL)
         result = self.topic_msg_cb.tick()
-        msg = rospy.wait_for_message('/topic_cb', String)
+        msg = rospy.wait_for_message('topic_cb', String)
         assert_equal(result.status, NodeStatus.FAIL)
         assert_equal('1', msg.data)
 
     def test_cancel(self):
         result = self.topic_msg_cb.tick()
-        msg = rospy.wait_for_message('/topic_cb', String)
+        msg = rospy.wait_for_message('topic_cb', String)
         assert_equal(result.status, NodeStatus.SUCCESS)
         assert_equal('1', msg.data)
 
         self.topic_msg_cb.cancel()
         result = self.topic_msg_cb.tick()
-        msg = rospy.wait_for_message('/topic_cb', String)
+        msg = rospy.wait_for_message('topic_cb', String)
         assert_equal(result.status, NodeStatus.CANCEL)
         assert_equal('1', msg.data)
 
