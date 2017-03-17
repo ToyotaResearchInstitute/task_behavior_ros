@@ -51,6 +51,7 @@ class ActionClient(Node):
         self.client = actionlib.SimpleActionClient(action_name, action_type)
         self.goal = goal
         self.goal_cb = goal_cb
+        self.goal_msg = None
         self.server_timeout = server_timeout
         self.server_connected = False
 
@@ -60,18 +61,20 @@ class ActionClient(Node):
         if self.client.wait_for_server(rospy.Duration(self.server_timeout)):
             self.server_connected = True
             rospy.loginfo("["+self._name+"] Found server")
+            self.goal_msg = None
             if self.goal:
-                self.client.send_goal(self.goal)
-                rospy.loginfo("sent goal")
+		self.goal_msg = self.goal
             elif self.goal_cb:
-                self.client.send_goal(self.goal_cb(nodedata))
-                rospy.loginfo("sent goal cb")
+                self.goal_msg = self.goal_cb(nodedata)
+            if self.goal_msg:
+                self.client.send_goal(self.goal_msg)
+                rospy.loginfo("sent goal")
         else:
             self.server_connected = False
 
     def run(self, nodedata):
         if self.server_connected:
-            if self.goal or self.goal_cb:
+            if self.goal_msg:
                 nodedata.state = self.client.get_state()
                 if nodedata.state == GoalStatus.PENDING or nodedata.state == GoalStatus.ACTIVE:
                     rospy.loginfo("[" + self._name + "] state: active")
