@@ -122,6 +122,7 @@ class TestIntrospection(object):
         msg = rospy.wait_for_message('tree/status', TreeStatus)
 
         assert_equal(len(msg.id), 4)
+        assert_equal(len(msg.name), 4)
         assert_equal(len(msg.status), 4)
         valid_keys = self.id_name_map.keys()
 
@@ -271,5 +272,5 @@ if __name__ == '__main__':
     args, unknown = parser.parse_known_args()
 
     noseargs = [sys.argv[0], module_name, '--with-xunit',
-                '--xunit-file='+str(args.gtest_output.lstrip('xml:'))]
+                '--xunit-file=' + str(args.gtest_output.lstrip('xml:'))]
     nose.run(argv=noseargs)
