@@ -29,41 +29,41 @@ class Introspection(object):
     """ This class enables ros introspection on a behavior tree
     """
 
-    def __init__(self, node):
+    def __init__(self, node, prefix="tree"):
         """ recursively set up the pub/subs of this node
             @param node [Node] The node to recursively introspect
         """
         self.parent = node
         self.node_map = {}
 
-        self._structure_pub = rospy.Publisher("tree/structure",
+        self._structure_pub = rospy.Publisher("%s/structure" % prefix,
                                               TreeStructure,
                                               queue_size=1,
                                               latch=True)
-        self._status_pub = rospy.Publisher("tree/status",
+        self._status_pub = rospy.Publisher("%s/status" % prefix,
                                            TreeStatus,
                                            queue_size=1,
                                            latch=True)
 
         self._reload()
 
-        self._force_sub = rospy.Subscriber("tree/force",
+        self._force_sub = rospy.Subscriber("%s/force" % prefix,
                                            TreeStatus,
                                            self._force_node,
                                            queue_size=1)
-        self._tick_sub = rospy.Subscriber("tree/tick",
+        self._tick_sub = rospy.Subscriber("%s/tick" % prefix,
                                           String,
                                           self._tick_node,
                                           queue_size=1)
-        self._cancel_sub = rospy.Subscriber("tree/cancel",
+        self._cancel_sub = rospy.Subscriber("%s/cancel" % prefix,
                                             String,
                                             self._cancel_node,
                                             queue_size=1)
-        self._refresh_sub = rospy.Subscriber("tree/refresh",
+        self._refresh_sub = rospy.Subscriber("%s/refresh" % prefix,
                                              Empty,
                                              self._reload,
                                              queue_size=1)
-        self._clear_sub = rospy.Subscriber("tree/clear",
+        self._clear_sub = rospy.Subscriber("%s/clear" % prefix,
                                            Empty,
                                            self._clear,
                                            queue_size=1)
@@ -158,6 +158,7 @@ class Introspection(object):
         node_status_msg.text = node_status.text
 
         msg.id.append(str(node._id))
+        msg.name.append(node._name)
         msg.status.append(node_status_msg)
 
         if Behavior in type(node).__bases__:
@@ -178,7 +179,7 @@ class Introspection(object):
         for i, node_id in enumerate(msg.id):
             if node_id in self.node_map.keys():
                 rospy.loginfo(
-                    "forcing "+str(node_id)+" to " + str(msg.status[i].status))
+                    "forcing " + str(node_id) + " to " + str(msg.status[i].status))
                 self.node_map[node_id].force(msg.status[i].status)
 
     def _tick_node(self, msg):
