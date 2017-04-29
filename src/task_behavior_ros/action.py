@@ -19,6 +19,7 @@ from actionlib_msgs.msg import GoalStatus
 
 from task_behavior_engine.tree import Node
 from task_behavior_engine.tree import NodeStatus
+from task_behavior_msgs.msg import NodeDataDump
 
 
 class ActionClient(Node):
@@ -60,10 +61,10 @@ class ActionClient(Node):
             "[" + self._name + "] Waiting for server: " + self.client.action_client.ns)
         if self.client.wait_for_server(rospy.Duration(self.server_timeout)):
             self.server_connected = True
-            rospy.loginfo("["+self._name+"] Found server")
+            rospy.loginfo("[" + self._name + "] Found server")
             self.goal_msg = None
             if self.goal:
-		self.goal_msg = self.goal
+                self.goal_msg = self.goal
             elif self.goal_cb:
                 self.goal_msg = self.goal_cb(nodedata)
             if self.goal_msg:
@@ -100,3 +101,12 @@ class ActionClient(Node):
         if self.server_connected and self.client.get_state() <= GoalStatus.ACTIVE:
             rospy.loginfo("[" + self._name + "] canceling goal..")
             self.client.cancel_goal()
+        print nodedata
+        if nodedata.get_data('last_result').status == NodeStatus.FAIL:
+
+            ndd = NodeDataDump()
+            ndd.name = self._name
+            for key in nodedata.keys():
+                ndd.key.append(str(key))
+                ndd.value.append(str(nodedata.get_data(key)))
+            self.pub.publish(ndd)
