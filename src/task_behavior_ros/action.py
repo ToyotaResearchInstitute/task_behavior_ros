@@ -55,6 +55,7 @@ class ActionClient(Node):
         self.goal_msg = None
         self.server_timeout = server_timeout
         self.server_connected = False
+        self.data_dump = rospy.Publisher("task_failed", NodeDataDump, queue_size=10)
 
     def config(self, nodedata):
         rospy.loginfo(
