@@ -55,7 +55,8 @@ class ActionClient(Node):
         self.goal_msg = None
         self.server_timeout = server_timeout
         self.server_connected = False
-        self.data_dump = rospy.Publisher("task_failed", NodeDataDump, queue_size=10)
+        self.data_dump = rospy.Publisher(
+            "task_failed", NodeDataDump, queue_size=10)
 
     def config(self, nodedata):
         rospy.loginfo(
@@ -110,4 +111,4 @@ class ActionClient(Node):
             for key in nodedata.keys():
                 ndd.key.append(str(key))
                 ndd.value.append(str(nodedata.get_data(key)))
-            self.pub.publish(ndd)
+            self.data_dump.publish(ndd)
