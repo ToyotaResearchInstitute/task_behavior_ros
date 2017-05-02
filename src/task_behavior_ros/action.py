@@ -19,7 +19,6 @@ from actionlib_msgs.msg import GoalStatus
 
 from task_behavior_engine.tree import Node
 from task_behavior_engine.tree import NodeStatus
-from task_behavior_msgs.msg import NodeDataDump
 
 
 class ActionClient(Node):
@@ -55,8 +54,6 @@ class ActionClient(Node):
         self.goal_msg = None
         self.server_timeout = server_timeout
         self.server_connected = False
-        self.data_dump = rospy.Publisher(
-            "task_failed", NodeDataDump, queue_size=10)
 
     def config(self, nodedata):
         rospy.loginfo(
