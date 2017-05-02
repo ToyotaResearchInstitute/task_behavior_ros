@@ -103,12 +103,3 @@ class ActionClient(Node):
         if self.server_connected and self.client.get_state() <= GoalStatus.ACTIVE:
             rospy.loginfo("[" + self._name + "] canceling goal..")
             self.client.cancel_goal()
-        print nodedata
-        if nodedata.get_data('last_result').status == NodeStatus.FAIL:
-
-            ndd = NodeDataDump()
-            ndd.name = self._name
-            for key in nodedata.keys():
-                ndd.key.append(str(key))
-                ndd.value.append(str(nodedata.get_data(key)))
-            self.data_dump.publish(ndd)

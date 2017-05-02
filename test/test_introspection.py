@@ -21,14 +21,18 @@ import nose
 from nose.tools import assert_equal
 from nose.tools import assert_not_equal
 from nose.tools import assert_raises
+from nose.tools import assert_true
 
 from std_msgs.msg import String
 
+from task_behavior_engine.tree import Blackboard
 from task_behavior_engine.tree import Node
 from task_behavior_engine.tree import NodeStatus
 from task_behavior_engine.branch import Sequencer
 from task_behavior_engine.decorator import Repeat
 
+from task_behavior_msgs.msg import NodeDataDump
+from task_behavior_msgs.msg import TreeDataDump
 from task_behavior_msgs.msg import TreeStructure
 from task_behavior_msgs.msg import TreeNode
 from task_behavior_msgs.msg import TreeStatus
@@ -56,6 +60,11 @@ class TestIntrospection(object):
         LEVEL2.set_child(CONTINUE)
         LEVEL1.add_child(LEVEL2)
         LEVEL1.add_child(CONTINUE2)
+
+        CONTINUE._blackboard.save('foo', 1, CONTINUE._id)
+        CONTINUE2._blackboard.save('bar', 2, CONTINUE2._id)
+        LEVEL1._blackboard.save('toy', 1.0, LEVEL1._id)
+        LEVEL2._blackboard.save('yoda', 2.0, LEVEL2._id)
 
         self.id_name_map = {}
         self.id_name_map[str(LEVEL1._id)] = LEVEL1._name
@@ -154,6 +163,86 @@ class TestIntrospection(object):
                 assert_equal(msg.status[i].status, TreeNodeStatus.ACTIVE)
             if self.id_name_map[scope] == "CONTINUE2":
                 assert_equal(msg.status[i].status, TreeNodeStatus.PENDING)
+
+    def test_data_dump_pub(self):
+        self.test._reload()
+        self.test.publish_data_dump()
+        msg = rospy.wait_for_message('tree/data', TreeDataDump)
+
+        assert_equal(len(msg.node), 4)
+        assert_equal(len(msg.data), 4)
+
+        valid_names = [self.id_name_map[key] for key in self.id_name_map]
+
+        for node in msg.node:
+            assert_equal(node.name in valid_names, True)
+            valid_names.remove(node.name)
+            if node.name == "LEVEL1":
+                assert_equal(node.type, TreeNode.BEHAVIOR)
+                assert_equal(len(node.children), 2)
+            if node.name == "LEVEL2":
+                assert_equal(node.type, TreeNode.DECORATOR)
+                assert_equal(len(node.children), 1)
+            if node.name == "CONTINUE":
+                assert_equal(node.type, TreeNode.NODE)
+                assert_equal(len(node.children), 0)
+            if node.name == "CONTINUE2":
+                assert_equal(node.type, TreeNode.NODE)
+                assert_equal(len(node.children), 0)
+        assert_equal(len(valid_names), 0)
+
+        for data in msg.data:
+            assert_equal(len(data.key), 1)
+            assert_equal(len(data.value), 1)
+
+        assert_true('toy' in msg.data[0].key)
+        assert_true('1.0' in msg.data[0].value)
+        assert_true('yoda' in msg.data[1].key)
+        assert_true('2.0' in msg.data[1].value)
+        assert_true('foo' in msg.data[2].key)
+        assert_true('1' in msg.data[2].value)
+        assert_true('bar' in msg.data[3].key)
+        assert_true('2' in msg.data[3].value)
+
+        print "running the parent"
+        self.test.parent.tick()
+        self.test.publish_data_dump()
+        msg = rospy.wait_for_message('tree/data', TreeDataDump)
+        assert_equal(len(msg.node), 4)
+        assert_equal(len(msg.data), 4)
+
+        valid_names = [self.id_name_map[key] for key in self.id_name_map]
+
+        for node in msg.node:
+            assert_equal(node.name in valid_names, True)
+            valid_names.remove(node.name)
+            if node.name == "LEVEL1":
+                assert_equal(node.type, TreeNode.BEHAVIOR)
+                assert_equal(len(node.children), 2)
+            if node.name == "LEVEL2":
+                assert_equal(node.type, TreeNode.DECORATOR)
+                assert_equal(len(node.children), 1)
+            if node.name == "CONTINUE":
+                assert_equal(node.type, TreeNode.NODE)
+                assert_equal(len(node.children), 0)
+            if node.name == "CONTINUE2":
+                assert_equal(node.type, TreeNode.NODE)
+                assert_equal(len(node.children), 0)
+        assert_equal(len(valid_names), 0)
+        for i in range(len(msg.data) - 1):
+            assert_equal(len(msg.data[i].key), 2)
+            assert_equal(len(msg.data[i].value), 2)
+        assert_equal(len(msg.data[3].key), 1)
+        assert_equal(len(msg.data[3].value), 1)
+
+        assert_true('toy' in msg.data[0].key)
+        assert_true('1.0' in msg.data[0].value)
+        assert_true('yoda' in msg.data[1].key)
+        assert_true('2.0' in msg.data[1].value)
+        assert_true('foo' in msg.data[2].key)
+        assert_true('1' in msg.data[2].value)
+        assert_true('bar' in msg.data[3].key)
+        assert_true('2' in msg.data[3].value)
 
     def test_force(self):
         node = self.test.parent._children[0]
