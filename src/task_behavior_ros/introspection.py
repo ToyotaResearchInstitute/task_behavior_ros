@@ -119,12 +119,14 @@ class Introspection(object):
         tree_structure_msg.header.stamp = rospy.Time.now()
         self._structure_pub.publish(tree_structure_msg)
 
-    def _create_structure_msg(self, node, msg=TreeStructure()):
+    def _create_structure_msg(self, node, msg=None):
         """ Recursively create the behavior tree structure message
             @param node [Node] The base node to create the structure from
             @param msg [TreeStructure] The message created so far
             @returns [TreeStructure] The structure message
         """
+        if msg is None:
+            msg = TreeStructure()
         node_msg = TreeNode()
         node_msg.id = str(node._id)
         node_msg.name = node._name
@@ -174,29 +176,29 @@ class Introspection(object):
         for key in nodedata.keys():
             ndd.key.append(str(key))
             ndd.value.append(str(nodedata.get_data(key)))
-        status = node.get_status()
-        if status.status is not NodeStatus.PENDING:
-            ndd.key.append('status')
-            ndd.value.append(str(status))
         return ndd
 
-    def _create_tree_data_dump_msg(self, node, msg=TreeDataDump()):
+    def _create_tree_data_dump_msg(self, node, msg=None):
         """ Create the status message
             @param node [Node] The node to get the status from (recursive)
             @param msg [TreeDataDump] The message created so far
             @returns [TreeDataDump] The status message
         """
+        if msg is None:
+            msg = TreeDataDump()
         msg.structure = self._create_structure_msg(node, TreeStructure())
         msg.status = self._create_status_msg(node, TreeStatus())
 
         return msg
 
-    def _create_status_msg(self, node, msg=TreeStatus()):
+    def _create_status_msg(self, node, msg=None):
         """ Create the status message
             @param node [Node] The node to get the status from (recursive)
             @param msg [TreeStatus] The current TreeStatus message
             @returns [TreeStatus] The status message
         """
+        if msg is None:
+            msg = TreeStatus()
         node_status = node.get_status()
         node_status_msg = TreeNodeStatus()
         node_status_msg.status = node_status.status
@@ -205,7 +207,6 @@ class Introspection(object):
         msg.id.append(str(node._id))
         msg.name.append(node._name)
         msg.status.append(node_status_msg)
-        
         nodedata = self._create_node_data_msg(node)
         msg.data.append(nodedata)
 
@@ -214,7 +215,6 @@ class Introspection(object):
                 msg = self._create_status_msg(child, msg)
         if Decorator in type(node).__bases__:
             msg = self._create_status_msg(node._child, msg)
-
         return msg
 
     def _force_node(self, msg):

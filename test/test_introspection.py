@@ -84,8 +84,6 @@ class TestIntrospection(object):
         msg = rospy.wait_for_message('tree/structure', TreeStructure)
         self.check_structure_msg(msg)
 
-       
-        
     def check_structure_msg(self, msg):
         assert_equal(len(msg.node), 4)
         valid_names = [self.id_name_map[key] for key in self.id_name_map]
@@ -113,17 +111,15 @@ class TestIntrospection(object):
         self.test.publish_status()
         msg = rospy.wait_for_message('tree/status', TreeStatus)
         self.check_status_msg_pending(msg)
-        
+
         print "running the parent"
         self.test.parent.tick()
         self.test.publish_status()
         msg = rospy.wait_for_message('tree/status', TreeStatus)
         self.check_status_msg_ticked(msg)
 
-        
-                
     def check_status_msg_pending(self, msg):
-        #check status
+        # check status
         assert_equal(len(msg.id), 4)
         assert_equal(len(msg.name), 4)
         assert_equal(len(msg.status), 4)
@@ -138,8 +134,8 @@ class TestIntrospection(object):
             print "verify " + scope + " initialzed to PENDING"
             assert_equal(msg.status[i].status, TreeNodeStatus.PENDING)
         assert_equal(len(valid_keys), 0)
-        
-        #check nodedata
+
+        # check nodedata
         for data in msg.data:
             assert_equal(len(data.key), 1)
             assert_equal(len(data.value), 1)
@@ -154,7 +150,7 @@ class TestIntrospection(object):
         assert_true('2' in msg.data[3].value)
 
     def check_status_msg_ticked(self, msg):
-        #check status    
+        # check status
         valid_keys = self.id_name_map.keys()
 
         for i, scope in enumerate(msg.id):
@@ -170,13 +166,11 @@ class TestIntrospection(object):
                 assert_equal(msg.status[i].status, TreeNodeStatus.ACTIVE)
             if self.id_name_map[scope] == "CONTINUE2":
                 assert_equal(msg.status[i].status, TreeNodeStatus.PENDING)
-         
-        #check nodedata
-        for i in range(len(msg.data) - 1):
-            assert_equal(len(msg.data[i].key), 2)
-            assert_equal(len(msg.data[i].value), 2)
-        assert_equal(len(msg.data[3].key), 1)
-        assert_equal(len(msg.data[3].value), 1)
+
+        # check nodedata
+        for i in range(len(msg.data)):
+            assert_equal(len(msg.data[i].key), 1)
+            assert_equal(len(msg.data[i].value), 1)
 
         assert_true('toy' in msg.data[0].key)
         assert_true('1.0' in msg.data[0].value)
@@ -186,8 +180,6 @@ class TestIntrospection(object):
         assert_true('1' in msg.data[2].value)
         assert_true('bar' in msg.data[3].key)
         assert_true('2' in msg.data[3].value)
-    
-        
 
     def test_data_dump_pub(self):
         self.test._reload()
@@ -195,15 +187,14 @@ class TestIntrospection(object):
         msg = rospy.wait_for_message('tree/data', TreeDataDump)
         self.check_structure_msg(msg.structure)
         self.check_status_msg_pending(msg.status)
-        
+
         print "running the parent"
         self.test.parent.tick()
         self.test.publish_data_dump()
         msg = rospy.wait_for_message('tree/data', TreeDataDump)
-        
+
         self.check_structure_msg(msg.structure)
         self.check_status_msg_ticked(msg.status)
-        
 
     def test_force(self):
         node = self.test.parent._children[0]
