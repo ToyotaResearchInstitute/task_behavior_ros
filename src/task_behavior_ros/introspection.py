@@ -181,7 +181,7 @@ class Introspection(object):
     def _create_tree_data_dump_msg(self, node, msg=TreeDataDump()):
         """ Create the status message
             @param node [Node] The node to get the status from (recursive)
-             @param msg [TreeDataDump] The message created so far
+            @param msg [TreeDataDump] The message created so far
             @returns [TreeDataDump] The status message
         """
         node_msg = TreeNode()
