@@ -19,7 +19,7 @@ from task_behavior_engine.tree import Decorator
 from std_msgs.msg import Empty
 from std_msgs.msg import String
 from task_behavior_engine.tree import NodeStatus
-from task_behavior_msgs.msg import NodeDataDump
+from task_behavior_msgs.msg import NodeData
 from task_behavior_msgs.msg import TreeDataDump
 from task_behavior_msgs.msg import TreeNode
 from task_behavior_msgs.msg import TreeNodeStatus
@@ -165,10 +165,10 @@ class Introspection(object):
     def _create_node_data_dump(self, node):
         """ Create a node's data dump message
         @param node [Node] The node to get the data from
-        @returns [NodeDataDump] The blackboard data from the node
+        @returns [NodeData] The blackboard data from the node
         """
         nodedata = node._blackboard.get_memory(node._id)
-        ndd = NodeDataDump()
+        ndd = NodeData()
         for key in nodedata.keys():
             ndd.key.append(str(key))
             ndd.value.append(str(nodedata.get_data(key)))
@@ -193,8 +193,7 @@ class Introspection(object):
 
         if Behavior in type(node).__bases__:
             node_msg.type = TreeNode.BEHAVIOR
-            for child in node._children:
-                node_msg.children.append(str(child._id))
+            node_msg.children = [str(child._id) for child in node._children]
             msg.node.append(node_msg)
             for child in node._children:
                 msg = self._create_tree_data_dump_msg(child, msg)
