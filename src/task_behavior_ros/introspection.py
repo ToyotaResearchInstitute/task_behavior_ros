@@ -35,6 +35,7 @@ class Introspection(object):
     def __init__(self, node, prefix="tree"):
         """ recursively set up the pub/subs of this node
             @param node [Node] The node to recursively introspect
+            @param prefix [string] name prefix for the set of topics
         """
         self.parent = node
         self.node_map = {}
