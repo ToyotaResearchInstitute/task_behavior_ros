@@ -20,6 +20,7 @@ from std_msgs.msg import Empty
 from std_msgs.msg import String
 from task_behavior_engine.tree import NodeStatus
 from task_behavior_msgs.msg import NodeData
+from task_behavior_msgs.msg import TreeDataDump
 from task_behavior_msgs.msg import TreeNode
 from task_behavior_msgs.msg import TreeNodeStatus
 from task_behavior_msgs.msg import TreeStatus
@@ -46,6 +47,10 @@ class Introspection(object):
                                            TreeStatus,
                                            queue_size=1,
                                            latch=True)
+        self._data_dump = rospy.Publisher("%s/data" % prefix,
+                                          TreeDataDump,
+                                          queue_size=1,
+                                          latch=True)
 
         self._reload()
 
@@ -148,6 +153,15 @@ class Introspection(object):
         tree_status_msg.header.stamp = rospy.Time.now()
         self._status_pub.publish(tree_status_msg)
 
+    def publish_data_dump(self, node=self.parent):
+        """
+        Publishes a data dump message of the tree
+        """
+        tree_data_dump_msg = self._create_tree_data_dump_msg(
+            node, TreeDataDump())
+        tree_data_dump_msg.header.stamp = rospy.Time.now()
+        self._data_dump.publish(tree_data_dump_msg)
+
     def _create_node_data_dump(self, node):
         """ Create a node's data dump message
         @param node [Node] The node to get the data from
@@ -164,6 +178,35 @@ class Introspection(object):
             ndd.value.append(str(status))
         return ndd
 
+    def _create_tree_data_dump_msg(self, node, msg=TreeDataDump()):
+        """ Create the status message
+            @param node [Node] The node to get the status from (recursive)
+            @param msg [TreeDataDump] The message created so far
+            @returns [TreeDataDump] The status message
+        """
+        msg.structure = self._create_structure_msg()
+        node_msg = TreeNode()
+        node_msg.id = str(node._id)
+        node_msg.name = node._name
+
+        data_msg = self._create_node_data_dump(node)
+        msg.data.append(data_msg)
+
+        if Behavior in type(node).__bases__:
+            node_msg.type = TreeNode.BEHAVIOR
+            node_msg.children = [str(child._id) for child in node._children]
+            msg.node.append(node_msg)
+            for child in node._children:
+                msg = self._create_tree_data_dump_msg(child, msg)
+        elif Decorator in type(node).__bases__:
+            node_msg.type = TreeNode.DECORATOR
+            node_msg.children = [str(node._child._id)]
+            msg.node.append(node_msg)
+            msg = self._create_tree_data_dump_msg(node._child, msg)
+        else:
+            msg.node.append(node_msg)
+        return msg
+
     def _create_status_msg(self, node, msg=TreeStatus()):
         """ Create the status message
             @param node [Node] The node to get the status from (recursive)
@@ -178,9 +221,6 @@ class Introspection(object):
         msg.id.append(str(node._id))
         msg.name.append(node._name)
         msg.status.append(node_status_msg)
-
-        data_msg = self._create_node_data_dump(node)
-        msg.data.append(data_msg)
 
         if Behavior in type(node).__bases__:
             for child in node._children:
