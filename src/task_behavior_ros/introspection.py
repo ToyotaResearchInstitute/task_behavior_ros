@@ -153,21 +153,23 @@ class Introspection(object):
         tree_status_msg.header.stamp = rospy.Time.now()
         self._status_pub.publish(tree_status_msg)
 
-    def publish_data_dump(self, node=self.parent):
+    def publish_data_dump(self, node=None):
         """
         Publishes a data dump message of the tree
         """
+        if node is None:
+            node = self.parent
         tree_data_dump_msg = self._create_tree_data_dump_msg(
             node, TreeDataDump())
         tree_data_dump_msg.header.stamp = rospy.Time.now()
         self._data_dump.publish(tree_data_dump_msg)
 
-    def _create_node_data_dump(self, node):
+    def _create_node_data_msg(self, node):
         """ Create a node's data dump message
         @param node [Node] The node to get the data from
         @returns [NodeData] The blackboard data from the node
         """
-        nodedata = node._blackboard.get_memory(node._id)
+        nodedata = node.get_nodedata()
         ndd = NodeData()
         for key in nodedata.keys():
             ndd.key.append(str(key))
@@ -184,27 +186,9 @@ class Introspection(object):
             @param msg [TreeDataDump] The message created so far
             @returns [TreeDataDump] The status message
         """
-        msg.structure = self._create_structure_msg()
-        node_msg = TreeNode()
-        node_msg.id = str(node._id)
-        node_msg.name = node._name
+        msg.structure = self._create_structure_msg(node, TreeStructure())
+        msg.status = self._create_status_msg(node, TreeStatus())
 
-        data_msg = self._create_node_data_dump(node)
-        msg.data.append(data_msg)
-
-        if Behavior in type(node).__bases__:
-            node_msg.type = TreeNode.BEHAVIOR
-            node_msg.children = [str(child._id) for child in node._children]
-            msg.node.append(node_msg)
-            for child in node._children:
-                msg = self._create_tree_data_dump_msg(child, msg)
-        elif Decorator in type(node).__bases__:
-            node_msg.type = TreeNode.DECORATOR
-            node_msg.children = [str(node._child._id)]
-            msg.node.append(node_msg)
-            msg = self._create_tree_data_dump_msg(node._child, msg)
-        else:
-            msg.node.append(node_msg)
         return msg
 
     def _create_status_msg(self, node, msg=TreeStatus()):
@@ -221,6 +205,9 @@ class Introspection(object):
         msg.id.append(str(node._id))
         msg.name.append(node._name)
         msg.status.append(node_status_msg)
+        
+        nodedata = self._create_node_data_msg(node)
+        msg.data.append(nodedata)
 
         if Behavior in type(node).__bases__:
             for child in node._children:

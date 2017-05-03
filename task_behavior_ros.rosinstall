@@ -1,6 +1,7 @@
 - git:
     local-name: task_behavior_engine
     uri: https://github.com/ToyotaResearchInstitute/task_behavior_engine.git
+    version: node_data_dump
 - git:
     local-name: task_behavior_msgs
     uri: https://github.com/ToyotaResearchInstitute/task_behavior_msgs.git
