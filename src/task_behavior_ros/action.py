@@ -60,10 +60,10 @@ class ActionClient(Node):
             "[" + self._name + "] Waiting for server: " + self.client.action_client.ns)
         if self.client.wait_for_server(rospy.Duration(self.server_timeout)):
             self.server_connected = True
-            rospy.loginfo("["+self._name+"] Found server")
+            rospy.loginfo("[" + self._name + "] Found server")
             self.goal_msg = None
             if self.goal:
-		self.goal_msg = self.goal
+                self.goal_msg = self.goal
             elif self.goal_cb:
                 self.goal_msg = self.goal_cb(nodedata)
             if self.goal_msg:
