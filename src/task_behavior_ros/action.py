@@ -43,9 +43,7 @@ class ActionClient(Node):
     def __init__(self, name, action_name, action_type, goal=None, goal_cb=None,
                  server_timeout=0.5, *args, **kwargs):
         super(ActionClient, self).__init__(name=name,
-                                           configure_cb=self.config,
                                            run_cb=self.run,
-                                           cleanup_cb=self.cleanup,
                                            *args, **kwargs)
         rospy.loginfo("[" + self._name + "] Creating client")
         self.client = actionlib.SimpleActionClient(action_name, action_type)
@@ -55,7 +53,9 @@ class ActionClient(Node):
         self.server_timeout = server_timeout
         self.server_connected = False
 
-    def config(self, nodedata):
+    def _configure(self):
+        super(ActionClient, self)._configure()
+        nodedata = self._blackboard.get_memory(self._id)
         rospy.loginfo(
             "[" + self._name + "] Waiting for server: " + self.client.action_client.ns)
         if self.client.wait_for_server(rospy.Duration(self.server_timeout)):
@@ -95,8 +95,9 @@ class ActionClient(Node):
         rospy.logerr("[" + self._name + "] client not connected to server")
         return NodeStatus(NodeStatus.FAIL, "Client not connected to server")
 
-    def cleanup(self, nodedata):
+    def _cleanup(self):
         rospy.loginfo("[" + self._name + "] cleaning up...")
         if self.server_connected and self.client.get_state() <= GoalStatus.ACTIVE:
             rospy.loginfo("[" + self._name + "] canceling goal..")
             self.client.cancel_goal()
+        super(ActionClient, self)._cleanup()

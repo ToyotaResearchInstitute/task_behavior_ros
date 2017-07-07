@@ -66,7 +66,7 @@ class FibonacciAction(object):
                 success = False
                 break
             self._feedback.sequence.append(
-                self._feedback.sequence[i] + self._feedback.sequence[i-1])
+                self._feedback.sequence[i] + self._feedback.sequence[i - 1])
             # publish the feedback
             self._as.publish_feedback(self._feedback)
             # this step is not necessary, the sequence is computed at 1 Hz for
@@ -93,14 +93,14 @@ class TestActionClient(object):
         ac = action.ActionClient(name="actionlib_tutorial_client",
                                  action_name='test_action',
                                  action_type=actionlib_tutorials.msg.FibonacciAction)
-        ac.config(NodeData())
+        ac._configure()
         assert_equal(ac.server_connected, True)
 
         # test server not available
         ac = action.ActionClient(name="test_no_server",
                                  action_name="no_server",
                                  action_type=actionlib_tutorials.msg.FibonacciAction)
-        ac.config(NodeData())
+        ac._configure()
         assert_equal(ac.server_connected, False)
 
     def test_goal(self):
@@ -186,6 +186,7 @@ class TestActionClient(object):
         assert_true(
             client_state == GoalStatus.PREEMPTED or client_state == GoalStatus.RECALLED)
 
+
 if __name__ == '__main__':
     # This code will run the test in this file.'
     module_name = sys.modules[__name__].__file__
@@ -197,5 +198,5 @@ if __name__ == '__main__':
     args, unknown = parser.parse_known_args()
 
     noseargs = [sys.argv[0], module_name, '--with-xunit',
-                '--xunit-file='+str(args.gtest_output.lstrip('xml:'))]
+                '--xunit-file=' + str(args.gtest_output.lstrip('xml:'))]
     nose.run(argv=noseargs)
